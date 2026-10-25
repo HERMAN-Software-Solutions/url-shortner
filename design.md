@@ -9,12 +9,12 @@ The system allows users to turn long URLs into shorter links that are easier to 
 
 ## 2. API Surface
 
-* `POST /auth/register` → Creates a user account and returns the user's details.
-* `POST /auth/login` → Checks the user's credentials and returns a JWT access token.
-* `POST /shorten` → Creates a short link and returns the short code and original URL. Requires authentication.
-* `GET /{short_code}` → Redirects the user to the original URL and records the click.
-* `GET /stats/{code}` → Returns click statistics for a link. Requires authentication.
-* `DELETE /links/{code}` → Deletes a link. Requires authentication.
+* `POST /auth/register`  Creates a user account and returns the user's details.
+* `POST /auth/login`  Checks the user's credentials and returns a JWT access token.
+* `POST /shorten`  Creates a short link and returns the short code and original URL. Requires authentication.
+* `GET /{short_code}`  Redirects the user to the original URL and records the click.
+* `GET /stats/{code}`  Returns click statistics for a link. Requires authentication.
+* `DELETE /links/{code}`  Deletes a link. Requires authentication.
 
 ## 3. Database Schema
 
