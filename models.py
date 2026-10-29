@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import (BigInteger, Boolean, Column, DateTime, ForeignKey, Index, String, Text, func)
+from sqlalchemy import (BigInteger, Boolean, Column, DateTime, ForeignKey, Index, String, Text, func, text)
 from sqlalchemy.dialects.postgresql import UUID
 
 from database import Base
@@ -23,8 +23,7 @@ class Link(Base):
     short_code = Column(String(20), unique=True, nullable=False)
     original_url = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    is_active = Column(Boolean, default=True, nullable=False)
-    
+    is_active = Column(Boolean, default=True, server_default=text("true"), nullable=False)    
     
 class ClickEvent(Base):
     __tablename__ = "click_events"
