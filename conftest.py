@@ -10,7 +10,6 @@ load_dotenv()
 
 from database import Base, get_db
 from main import app
-from models import User
 
 test_engine = create_engine(os.getenv("TEST_DATABASE_URL"))
 TestingSession = sessionmaker(bind=test_engine)
@@ -27,7 +26,6 @@ def create_tables():
 def db():
     session = TestingSession()
     session.execute(text("TRUNCATE click_events, links, users CASCADE"))
-    session.add(User(email="dummy@example.com", password_hash="not-a-real-hash"))
     session.commit()
     yield session
     session.close()
@@ -38,3 +36,15 @@ def client(db):
     app.dependency_overrides[get_db] = lambda: db
     yield TestClient(app)
     app.dependency_overrides.clear()
+
+
+def login_headers(client, email="angella@example.com", password="password123"):
+    creds = {"email": email, "password": password}
+    client.post("/auth/register", json=creds)
+    token = client.post("/auth/login", json=creds).json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def auth_headers(client):
+    return login_headers(client)
