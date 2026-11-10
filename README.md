@@ -2,6 +2,9 @@
 
 A URL shortener built with FastAPI and PostgreSQL. Users register, log in with a JWT, create short links, and list their own links. Opening a short link redirects to the original URL and records a click.
 
+**Live API:** https://url-shortner-2wif.onrender.com
+**Interactive docs:** https://url-shortner-2wif.onrender.com/docs
+
 **Progress:** Week 2 (Postgres + core endpoints), Week 3 (authentication and user-owned links) and Week 4 (Docker and deployment) are complete.
 
 ## Setup
@@ -51,8 +54,8 @@ Tests run against the `shortener_test` database. They cover registration, login,
 ## Deployment
 Deployed on Render as a Docker web service, with a Render Postgres database.
 
-**Live URL:** https://YOUR-APP.onrender.com
-**API docs:** https://YOUR-APP.onrender.com/docs
+- **Live URL:** https://url-shortner-2wif.onrender.com
+- **API docs:** https://url-shortner-2wif.onrender.com/docs
 
 Environment variables set on the service: `DATABASE_URL` (Postgres connection string using the `postgresql+psycopg://` prefix) and `JWT_SECRET`. Migrations run automatically when the container starts.
 
