@@ -1,5 +1,6 @@
 import os
 
+import fakeredis
 import pytest
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
@@ -8,6 +9,7 @@ from sqlalchemy.orm import sessionmaker
 
 load_dotenv()
 
+from cache import get_redis
 from database import Base, get_db
 from main import app
 
@@ -32,8 +34,16 @@ def db():
 
 
 @pytest.fixture
-def client(db):
+def redis_client():
+    r = fakeredis.FakeRedis(decode_responses=True)
+    r.flushall()
+    return r
+
+
+@pytest.fixture
+def client(db, redis_client):
     app.dependency_overrides[get_db] = lambda: db
+    app.dependency_overrides[get_redis] = lambda: redis_client
     yield TestClient(app)
     app.dependency_overrides.clear()
 
