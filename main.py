@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from auth import create_access_token, get_current_user, hash_password, verify_password
-from cache import get_redis
+from cache import CLICK_QUEUE, get_redis
 from database import get_db
 from models import ClickEvent, Link, User
 
@@ -175,9 +175,6 @@ def redirect(
     db: Session = Depends(get_db),
     cache=Depends(get_redis),
 ):
-    link_id = None
-    target = None
-
     # 1. Check Redis first
     try:
         cached = cache.get(cache_key(short_code))
@@ -202,7 +199,17 @@ def redirect(
         except RedisError:
             pass
 
-    # Every redirect is still recorded as a click, cached or not
-    db.add(ClickEvent(link_id=uuid.UUID(link_id), referrer=request.headers.get("referer")))
-    db.commit()
+    # 3. Queue the click for the worker instead of writing to Postgres
+    click = {
+        "link_id": link_id,
+        "referrer": request.headers.get("referer"),
+        "clicked_at": datetime.now(timezone.utc).isoformat(),
+    }
+    try:
+        cache.rpush(CLICK_QUEUE, json.dumps(click))
+    except RedisError:
+        # Redis is down: write directly so the click is not lost
+        db.add(ClickEvent(link_id=uuid.UUID(link_id), referrer=click["referrer"]))
+        db.commit()
+
     return RedirectResponse(url=target, status_code=302)
