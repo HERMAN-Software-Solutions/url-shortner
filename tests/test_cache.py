@@ -2,7 +2,7 @@ import json
 
 from redis.exceptions import ConnectionError as RedisConnectionError
 
-from cache import get_redis
+from cache import CLICK_QUEUE, get_redis
 from main import app
 from models import ClickEvent
 
@@ -42,11 +42,11 @@ def test_second_request_is_served_from_cache(client, redis_client, auth_headers)
     assert r.headers["location"] == "https://from-cache.example.com"
 
 
-def test_cached_redirects_still_record_clicks(client, db, auth_headers):
+def test_cached_redirects_still_queue_clicks(client, redis_client, auth_headers):
     code = make_link(client, auth_headers)
     client.get(f"/{code}", follow_redirects=False)
     client.get(f"/{code}", follow_redirects=False)
-    assert db.query(ClickEvent).count() == 2
+    assert redis_client.llen(CLICK_QUEUE) == 2
 
 
 def test_unknown_code_is_not_cached(client, redis_client):
@@ -55,7 +55,8 @@ def test_unknown_code_is_not_cached(client, redis_client):
     assert redis_client.get("link:doesnotexist") is None
 
 
-def test_redirect_still_works_when_redis_is_down(client, auth_headers):
+
+def test_redirect_still_works_when_redis_is_down(client, db, auth_headers):
     code = make_link(client, auth_headers)
 
     class BrokenRedis:
@@ -65,7 +66,11 @@ def test_redirect_still_works_when_redis_is_down(client, auth_headers):
         def set(self, *args, **kwargs):
             raise RedisConnectionError("down")
 
+        def rpush(self, *args, **kwargs):
+            raise RedisConnectionError("down")
+
     app.dependency_overrides[get_redis] = lambda: BrokenRedis()
     r = client.get(f"/{code}", follow_redirects=False)
     assert r.status_code == 302
     assert r.headers["location"] == URL
+    assert db.query(ClickEvent).count() == 1  # fallback wrote the click directly

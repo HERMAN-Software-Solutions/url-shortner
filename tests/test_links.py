@@ -1,10 +1,11 @@
 from conftest import login_headers
 from models import ClickEvent, Link
+from cache import CLICK_QUEUE
 
 URL = "https://example.com/very/long/link"
 
 
-def test_shorten_click_and_redirect(client, db, auth_headers):
+def test_shorten_click_and_redirect(client, db, redis_client, auth_headers):
     r = client.post("/shorten", json={"original_url": URL}, headers=auth_headers)
     assert r.status_code == 201
     data = r.json()
@@ -14,7 +15,8 @@ def test_shorten_click_and_redirect(client, db, auth_headers):
     r2 = client.get(f"/{data['short_code']}", follow_redirects=False)
     assert r2.status_code == 302
     assert r2.headers["location"] == URL
-    assert db.query(ClickEvent).count() == 1
+    assert redis_client.llen(CLICK_QUEUE) == 1  # click is waiting in the queue
+    assert db.query(ClickEvent).count() == 0    # not written to Postgres yet
 
 
 def test_unknown_code_returns_404(client, db):

@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 
 from conftest import login_headers
 
+from worker import process_batch
+
 URL = "https://example.com/very/long/link"
 
 
@@ -25,7 +27,7 @@ def test_stats_for_someone_elses_link_returns_404(client):
     assert client.get(f"/stats/{code}", headers=theirs).status_code == 404
 
 
-def test_stats_totals_days_and_referrers(client, auth_headers):
+def test_stats_totals_days_and_referrers(client, db, redis_client, auth_headers):
     code = make_link(client, auth_headers)
 
     twitter = {"referer": "https://twitter.com/"}
@@ -33,6 +35,8 @@ def test_stats_totals_days_and_referrers(client, auth_headers):
     client.get(f"/{code}", headers=twitter, follow_redirects=False)
     client.get(f"/{code}", headers={"referer": "https://google.com/"}, follow_redirects=False)
     client.get(f"/{code}", follow_redirects=False)  # direct visit, no referrer
+
+    process_batch(redis_client, db, timeout=1)  # the worker saves the queued clicks
 
     r = client.get(f"/stats/{code}", headers=auth_headers)
     assert r.status_code == 200
@@ -46,7 +50,6 @@ def test_stats_totals_days_and_referrers(client, auth_headers):
 
     assert data["top_referrers"][0] == {"referrer": "https://twitter.com/", "clicks": 2}
     assert len(data["top_referrers"]) == 2  # direct visits are not a referrer
-
 
 def test_stats_for_link_with_no_clicks(client, auth_headers):
     code = make_link(client, auth_headers)
