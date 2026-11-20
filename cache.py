@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+CLICK_QUEUE = "queue:clicks"
 
 # Short timeouts so a dead Redis never makes the API hang
 _client = redis.Redis.from_url(
