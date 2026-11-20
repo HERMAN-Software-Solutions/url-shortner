@@ -50,6 +50,7 @@ def test_stats_totals_days_and_referrers(client, db, redis_client, auth_headers)
 
     assert data["top_referrers"][0] == {"referrer": "https://twitter.com/", "clicks": 2}
     assert len(data["top_referrers"]) == 2  # direct visits are not a referrer
+    
 
 def test_stats_for_link_with_no_clicks(client, auth_headers):
     code = make_link(client, auth_headers)
