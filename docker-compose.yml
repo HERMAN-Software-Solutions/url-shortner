@@ -35,5 +35,17 @@ services:
       redis:
         condition: service_healthy
 
+  worker:
+    build: .
+    command: python worker.py
+    environment:
+      DATABASE_URL: postgresql+psycopg://herman:${POSTGRES_PASSWORD}@db:5432/shortener
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
 volumes:
   pgdata:
